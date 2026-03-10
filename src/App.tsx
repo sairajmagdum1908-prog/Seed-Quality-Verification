@@ -188,12 +188,12 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-4">Identifier</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-14">Identifier</label>
             <div className="relative group">
-              <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
+              <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
               <input 
                 type="text" 
-                className="input-field w-full pl-14 h-14 bg-black/20 border-white/5 focus:border-agri-green/50" 
+                className="input-field w-full pl-16 h-14 bg-black/20 border-white/5 focus:border-agri-green/50" 
                 placeholder="Email or Mobile"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -202,12 +202,12 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
             </div>
           </div>
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-4">Credentials</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-14">Credentials</label>
             <div className="relative group">
-              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
+              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
               <input 
                 type="password" 
-                className="input-field w-full pl-14 h-14 bg-black/20 border-white/5 focus:border-agri-green/50" 
+                className="input-field w-full pl-16 h-14 bg-black/20 border-white/5 focus:border-agri-green/50" 
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -222,11 +222,11 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
           </div>
           {!isLogin && (
             <div className="space-y-2.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-4">Your Role</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-14">Your Role</label>
               <div className="relative group">
-                <Briefcase className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
+                <Briefcase className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
                 <select 
-                  className="input-field w-full pl-14 h-14 appearance-none pr-10 bg-black/20 border-white/5 focus:border-agri-green/50"
+                  className="input-field w-full pl-16 h-14 appearance-none pr-10 bg-black/20 border-white/5 focus:border-agri-green/50"
                   value={role}
                   onChange={(e: any) => setRole(e.target.value)}
                   required
@@ -281,22 +281,28 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
 };
 
 const FarmerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => void }) => {
-  const [view, setView] = useState<'home' | 'scan' | 'verify' | 'report' | 'ai'>('home');
+  const [view, setView] = useState<'home' | 'scan' | 'verifying' | 'verify' | 'report' | 'ai'>('home');
   const [scannedId, setScannedId] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const handleScan = async (id: string) => {
+    setView('verifying');
     setLoading(true);
     try {
       // Get location (mocked for now)
       const location = "Maharashtra, India";
       const result = await api.get(`/verify-seed/${id}?location=${location}`);
+      
+      // Artificial delay for dramatic effect
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       setVerificationResult(result);
       setScannedId(id);
       setView('verify');
     } catch (err: any) {
       alert(err.message);
+      setView('home');
     } finally {
       setLoading(false);
     }
@@ -304,6 +310,32 @@ const FarmerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => vo
 
   if (view === 'scan') {
     return <QRScanner onScan={handleScan} onBack={() => setView('home')} />;
+  }
+
+  if (view === 'verifying') {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-8">
+        <div className="relative">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+            className="w-48 h-48 rounded-full border-4 border-dashed border-agri-green/30"
+          />
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="absolute inset-4 bg-agri-green/10 rounded-full blur-2xl"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ShieldCheck className="w-16 h-16 text-agri-green animate-pulse" />
+          </div>
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-2xl font-black uppercase tracking-tighter">Verifying Authenticity</h3>
+          <p className="text-gray-500 font-medium animate-pulse">Querying Blockchain Ledger...</p>
+        </div>
+      </div>
+    );
   }
 
   if (view === 'verify' && verificationResult) {
@@ -412,54 +444,128 @@ const VerificationResult = ({ result, user, onBack, onReport }: { result: any, u
   const { seed, is_fraudulent } = result;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8 space-y-8">
-      <div className="text-center space-y-4">
-        <div className={`inline-block p-6 rounded-[40px] ${is_fraudulent ? 'bg-red-500/20' : 'bg-agri-green/20'}`}>
-          {is_fraudulent ? <ShieldAlert className="w-20 h-20 text-red-500" /> : <ShieldCheck className="w-20 h-20 text-agri-green" />}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-2xl mx-auto p-4 md:p-8 space-y-8 relative"
+    >
+      {/* Background Glow Effect */}
+      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full blur-[120px] -z-10 opacity-20 transition-colors duration-1000 ${is_fraudulent ? 'bg-red-500' : 'bg-agri-green'}`} />
+
+      <div className="text-center space-y-6 relative">
+        <motion.div 
+          initial={{ scale: 0.5, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: "spring", damping: 12, stiffness: 100 }}
+          className={`inline-block p-8 rounded-[48px] relative ${is_fraudulent ? 'bg-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.3)]' : 'bg-agri-green/20 shadow-[0_0_50px_rgba(16,185,129,0.3)]'}`}
+        >
+          {is_fraudulent ? (
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                filter: ["brightness(1)", "brightness(1.5)", "brightness(1)"]
+              }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              <ShieldAlert className="w-24 h-24 text-red-500" />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1 }}
+            >
+              <ShieldCheck className="w-24 h-24 text-agri-green" />
+            </motion.div>
+          )}
+          
+          {/* Decorative Rings */}
+          <motion.div 
+            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className={`absolute inset-0 rounded-[48px] border-2 ${is_fraudulent ? 'border-red-500/30' : 'border-agri-green/30'}`}
+          />
+        </motion.div>
+
+        <div className="space-y-2">
+          <motion.h2 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className={`text-5xl font-black tracking-tighter ${is_fraudulent ? 'text-red-500' : 'text-agri-green'}`}
+          >
+            {is_fraudulent ? 'Verification Failed' : 'Authenticity Verified'}
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-gray-400 font-medium tracking-wide"
+          >
+            {is_fraudulent 
+              ? 'This seed batch has been flagged as counterfeit or suspicious.' 
+              : 'Blockchain signature matches. This product is 100% genuine.'}
+          </motion.p>
         </div>
-        <h2 className={`text-4xl font-bold tracking-tight ${is_fraudulent ? 'text-red-500' : 'text-agri-green'}`}>
-          {is_fraudulent ? 'Fraud Detected!' : 'Genuine Seed'}
-        </h2>
-        <p className="text-gray-400">
-          {is_fraudulent ? 'This seed batch has been flagged for suspicious activity.' : 'This seed is verified and safe for planting.'}
-        </p>
       </div>
 
-      <Card className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seed Name</p>
-            <p className="font-bold text-lg">{seed.seed_name}</p>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        <Card className="space-y-8 border-white/5 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+            {is_fraudulent ? <ShieldX className="w-32 h-32 text-red-500" /> : <ShieldCheck className="w-32 h-32 text-agri-green" />}
           </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Manufacturer</p>
-            <p className="font-bold text-lg">{seed.manufacturer}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Batch Number</p>
-            <p className="font-bold text-lg">{seed.batch_number}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Production Date</p>
-            <p className="font-bold text-lg">{seed.production_date}</p>
-          </div>
-        </div>
 
-        <div className="p-4 bg-white/5 rounded-2xl space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Blockchain Hash</p>
-          <p className="text-[10px] font-mono break-all opacity-60">{seed.hash}</p>
-        </div>
-      </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Product Identity</p>
+              <p className="font-bold text-xl text-white">{seed.seed_name}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Origin Source</p>
+              <p className="font-bold text-xl text-white">{seed.manufacturer}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Batch Reference</p>
+              <p className="font-mono text-lg text-agri-green">{seed.batch_number}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Timestamp</p>
+              <p className="font-bold text-xl text-white">{seed.production_date}</p>
+            </div>
+          </div>
 
-      <div className="flex flex-col gap-4">
+          <div className="p-6 bg-black/40 rounded-3xl border border-white/5 space-y-3">
+            <div className="flex justify-between items-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Blockchain Ledger Hash</p>
+              <Badge color={is_fraudulent ? "red" : "green"}>Immutable Record</Badge>
+            </div>
+            <p className="text-[11px] font-mono break-all opacity-40 leading-relaxed">{seed.hash}</p>
+          </div>
+        </Card>
+      </motion.div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="flex flex-col gap-4"
+      >
         {is_fraudulent && (
-          <button onClick={onReport} className="btn-primary bg-red-500 hover:bg-red-600 flex items-center justify-center gap-2">
-            <AlertTriangle className="w-5 h-5" /> Report Fake Seed
+          <button onClick={onReport} className="btn-primary bg-red-500 hover:bg-red-600 flex items-center justify-center gap-3 h-16 shadow-[0_10px_30px_rgba(239,68,68,0.3)]">
+            <AlertTriangle className="w-6 h-6" />
+            <span className="font-black uppercase tracking-widest">Report Counterfeit</span>
           </button>
         )}
-        <button onClick={onBack} className="btn-secondary w-full">Back to Dashboard</button>
-      </div>
-    </div>
+        <button onClick={onBack} className="btn-secondary w-full h-16 flex items-center justify-center gap-3">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-black uppercase tracking-widest">Return to Dashboard</span>
+        </button>
+      </motion.div>
+    </motion.div>
   );
 };
 
