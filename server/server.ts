@@ -16,15 +16,25 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
 
-  // API Routes
-  app.use('/api', authRoutes);
-  app.use('/api', seedRoutes);
-  app.use('/api', reportRoutes);
+  // Health Check
+  app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+  // API Router
+  const apiRouter = express.Router();
+  
+  apiRouter.use((req, res, next) => {
+    console.log(`API Request: ${req.method} ${req.url}`);
+    next();
+  });
+
+  apiRouter.use(authRoutes);
+  apiRouter.use(seedRoutes);
+  apiRouter.use(reportRoutes);
 
   // Gemini AI Analysis
-  app.post('/api/analyze-seed', async (req, res) => {
+  apiRouter.post('/analyze-seed', async (req, res) => {
     const { image } = req.body;
-    if (!image) return res.status(400).json({ error: 'Image is required' });
+    if (!image) return res.status(400).json({ success: false, message: 'Image is required' });
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -41,12 +51,13 @@ async function startServer() {
       });
       res.json({ analysis: response.text });
     } catch (error: any) {
+      console.error('AI Analysis Error:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   });
 
-  // Extra Features: Dashboard Stats
-  app.get('/api/admin/stats', (req, res) => {
+  // Dashboard Stats
+  apiRouter.get('/admin/stats', (req, res) => {
     try {
       const totalSeeds = db.prepare('SELECT COUNT(*) as count FROM seeds').get();
       const totalScans = db.prepare('SELECT COUNT(*) as count FROM scans').get();
@@ -62,8 +73,21 @@ async function startServer() {
       
       res.json({ totalSeeds, totalScans, fraudulentScans, totalReports, scanHeatmap });
     } catch (error: any) {
+      console.error('Stats Error:', error);
       res.status(500).json({ success: false, message: error.message });
     }
+  });
+
+  // Mount API Router
+  app.use('/api', apiRouter);
+
+  // API 404 Handler - MUST be after all apiRouter routes but before Vite
+  app.all('/api/*', (req, res) => {
+    console.warn(`API 404: ${req.method} ${req.url}`);
+    res.status(404).json({
+      success: false,
+      message: `API Route ${req.method} ${req.url} not found`
+    });
   });
 
   // Vite middleware for development
