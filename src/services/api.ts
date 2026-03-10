@@ -7,14 +7,32 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'API Error');
+    
+    let result;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      result = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error(text || `Server error: ${res.status}`);
+    }
+
+    if (!res.ok) throw new Error(result.message || result.error || 'API Error');
     return result;
   },
   async get(endpoint: string) {
     const res = await fetch(`${API_BASE}${endpoint}`);
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'API Error');
+    
+    let result;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      result = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error(text || `Server error: ${res.status}`);
+    }
+
+    if (!res.ok) throw new Error(result.message || result.error || 'API Error');
     return result;
   }
 };

@@ -33,7 +33,7 @@ router.post('/add-seed', (req, res) => {
       qr_data: JSON.stringify({ id, batch_number, manufacturer, hash })
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -43,7 +43,7 @@ router.get('/verify-seed/:id', (req, res) => {
   
   try {
     const seed: any = db.prepare('SELECT * FROM seeds WHERE id = ?').get(id);
-    if (!seed) return res.status(404).json({ error: 'Seed not found' });
+    if (!seed) return res.status(404).json({ success: false, message: 'Seed not found' });
     
     // Fraud Detection Logic
     // Check if scanned more than 10 times in different locations within short time
@@ -68,7 +68,7 @@ router.get('/verify-seed/:id', (req, res) => {
     
     res.json({ seed, is_fraudulent: !!is_fraudulent });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -78,7 +78,7 @@ router.get('/seed-history/:id', (req, res) => {
     const scans = db.prepare('SELECT * FROM scans WHERE seed_id = ? ORDER BY scan_time DESC').all(id);
     res.json({ scans });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

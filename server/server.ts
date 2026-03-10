@@ -41,7 +41,7 @@ async function startServer() {
       });
       res.json({ analysis: response.text });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   });
 
@@ -62,7 +62,7 @@ async function startServer() {
       
       res.json({ totalSeeds, totalScans, fraudulentScans, totalReports, scanHeatmap });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   });
 
@@ -82,6 +82,15 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
+  });
+
+  // Global Error Handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Unhandled Error:', err);
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message || 'Internal Server Error'
+    });
   });
 }
 

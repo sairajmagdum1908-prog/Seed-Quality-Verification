@@ -14,7 +14,7 @@ router.post('/report-fake', (req, res) => {
     
     res.json({ success: true, message: 'Report submitted. You earned 50 Trust Points!' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -29,7 +29,7 @@ router.get('/all-reports', (req, res) => {
     `).all();
     res.json({ reports });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
