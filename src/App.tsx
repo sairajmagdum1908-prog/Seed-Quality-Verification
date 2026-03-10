@@ -111,14 +111,18 @@ const Badge = ({ children, color = "green" }: { children: React.ReactNode, color
 
 // --- Pages ---
 
-const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
+const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfile) => void, initialIsLogin?: boolean }) => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'farmer' | 'manufacturer' | 'admin' | ''>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    setIsLogin(initialIsLogin);
+  }, [initialIsLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +154,12 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
     }
   };
 
+  const toggleMode = () => {
+    const newMode = !isLogin;
+    setIsLogin(newMode);
+    navigate(newMode ? '/login' : '/register');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative background elements */}
@@ -176,13 +186,13 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
 
         <div className="flex p-1.5 bg-black/20 rounded-3xl border border-white/5">
           <button 
-            onClick={() => setIsLogin(true)}
+            onClick={() => { setIsLogin(true); navigate('/login'); }}
             className={`flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${isLogin ? 'bg-agri-green text-white shadow-[0_4px_20px_rgba(16,185,129,0.4)]' : 'text-gray-500 hover:text-gray-300'}`}
           >
             Sign In
           </button>
           <button 
-            onClick={() => setIsLogin(false)}
+            onClick={() => { setIsLogin(false); navigate('/register'); }}
             className={`flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${!isLogin ? 'bg-agri-green text-white shadow-[0_4px_20px_rgba(16,185,129,0.4)]' : 'text-gray-500 hover:text-gray-300'}`}
           >
             Join Now
@@ -1029,11 +1039,19 @@ function AppContent() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={
-            user ? <Navigate to="/dashboard" /> : <LoginView onLogin={setUser} />
+            user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
+          } />
+          
+          <Route path="/login" element={
+            user ? <Navigate to="/dashboard" /> : <LoginView onLogin={setUser} initialIsLogin={true} />
+          } />
+
+          <Route path="/register" element={
+            user ? <Navigate to="/dashboard" /> : <LoginView onLogin={setUser} initialIsLogin={false} />
           } />
           
           <Route path="/dashboard" element={
-            !user ? <Navigate to="/" /> : (
+            !user ? <Navigate to="/login" /> : (
               user.role === 'farmer' ? <FarmerDashboard user={user} onBack={handleLogout} /> :
               user.role === 'manufacturer' ? <ManufacturerDashboard user={user} onBack={handleLogout} /> :
               <AdminDashboard user={user} onBack={handleLogout} />
