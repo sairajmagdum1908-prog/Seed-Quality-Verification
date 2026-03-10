@@ -1,0 +1,8 @@
+{
+  "name": "AgriTrust: Seed Verification",
+  "description": "Blockchain-powered seed authenticity verification system with AI-driven agricultural support.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
