@@ -27,9 +27,10 @@ async function startServer() {
     next();
   });
 
-  apiRouter.use(authRoutes);
-  apiRouter.use(seedRoutes);
-  apiRouter.use(reportRoutes);
+  // Register routes as requested
+  apiRouter.use('/auth', authRoutes);
+  apiRouter.use('/seeds', seedRoutes);
+  apiRouter.use('/reports', reportRoutes);
 
   // Gemini AI Analysis
   apiRouter.post('/analyze-seed', async (req, res) => {

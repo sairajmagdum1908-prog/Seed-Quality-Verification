@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldCheck, 
@@ -111,6 +112,7 @@ const Badge = ({ children, color = "green" }: { children: React.ReactNode, color
 // --- Pages ---
 
 const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -137,9 +139,10 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
       }
     }
     try {
-      const endpoint = isLogin ? '/login' : '/signup';
+      const endpoint = isLogin ? '/auth/login' : '/auth/signup';
       const data = await api.post(endpoint, { username, password, role });
       onLogin(data.user);
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -281,6 +284,7 @@ const LoginView = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
 };
 
 const FarmerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => void }) => {
+  const navigate = useNavigate();
   const [view, setView] = useState<'home' | 'scan' | 'verifying' | 'verify' | 'report' | 'ai'>('home');
   const [scannedId, setScannedId] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
@@ -292,7 +296,7 @@ const FarmerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => vo
     try {
       // Get location (mocked for now)
       const location = "Maharashtra, India";
-      const result = await api.get(`/verify-seed/${id}?location=${location}`);
+      const result = await api.get(`/seeds/verify-seed/${id}?location=${location}`);
       
       // Artificial delay for dramatic effect
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -358,6 +362,9 @@ const FarmerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => vo
           <h2 className="text-3xl font-bold">Welcome, {user.username}</h2>
         </div>
         <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/profile')} className="p-3 rounded-2xl bg-white/5 hover:bg-agri-green/10 hover:text-agri-green transition-all">
+            <User className="w-5 h-5" />
+          </button>
           <div className="px-4 py-2 rounded-2xl bg-agri-green/10 border border-agri-green/20 flex items-center gap-2">
             <Award className="w-5 h-5 text-agri-green" />
             <span className="font-bold">{user.points} <span className="text-[10px] opacity-50">PTS</span></span>
@@ -577,7 +584,7 @@ const ReportFakeView = ({ seedId, userId, onBack }: { seedId: string, userId: nu
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/report-fake', { seed_id: seedId, farmer_id: userId, report_reason: reason });
+      await api.post('/reports/report-fake', { seed_id: seedId, farmer_id: userId, report_reason: reason });
       alert("Report submitted successfully! You earned 50 points.");
       onBack();
     } catch (err: any) {
@@ -693,6 +700,7 @@ const AIAnalysisView = ({ onBack }: { onBack: () => void }) => {
 };
 
 const ManufacturerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => void }) => {
+  const navigate = useNavigate();
   const [view, setView] = useState<'home' | 'add'>('home');
   const [seeds, setSeeds] = useState<Seed[]>([]);
   const [loading, setLoading] = useState(false);
@@ -714,9 +722,14 @@ const ManufacturerDashboard = ({ user, onBack }: { user: UserProfile, onBack: ()
           <p className="text-agri-green text-xs font-bold uppercase tracking-widest">Manufacturer Dashboard</p>
           <h2 className="text-3xl font-bold">Welcome, {user.username}</h2>
         </div>
-        <button onClick={onBack} className="p-3 rounded-2xl bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all">
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/profile')} className="p-3 rounded-2xl bg-white/5 hover:bg-agri-green/10 hover:text-agri-green transition-all">
+            <User className="w-5 h-5" />
+          </button>
+          <button onClick={onBack} className="p-3 rounded-2xl bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all">
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -762,7 +775,7 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
     e.preventDefault();
     setLoading(true);
     try {
-      const data = await api.post('/add-seed', { ...formData, manufacturer });
+      const data = await api.post('/seeds/add-seed', { ...formData, manufacturer });
       setQrData(data.qr_data);
     } catch (err: any) {
       alert(err.message);
@@ -842,6 +855,7 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
 };
 
 const AdminDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => void }) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -851,7 +865,7 @@ const AdminDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => voi
       try {
         const [statsData, reportsData] = await Promise.all([
           api.get('/admin/stats'),
-          api.get('/all-reports')
+          api.get('/reports/all-reports')
         ]);
         setStats(statsData);
         setReports(reportsData.reports);
@@ -873,9 +887,14 @@ const AdminDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => voi
           <p className="text-agri-green text-xs font-bold uppercase tracking-widest">Admin Control Panel</p>
           <h2 className="text-3xl font-bold">System Overview</h2>
         </div>
-        <button onClick={onBack} className="p-3 rounded-2xl bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all">
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/profile')} className="p-3 rounded-2xl bg-white/5 hover:bg-agri-green/10 hover:text-agri-green transition-all">
+            <User className="w-5 h-5" />
+          </button>
+          <button onClick={onBack} className="p-3 rounded-2xl bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all">
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -944,13 +963,53 @@ const AdminDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => voi
   );
 };
 
+// --- Profile View ---
+const ProfileView = ({ user, onLogout }: { user: UserProfile, onLogout: () => void }) => {
+  return (
+    <div className="max-w-md mx-auto p-8 space-y-8">
+      <div className="text-center space-y-4">
+        <div className="inline-block p-6 rounded-full bg-agri-green/20">
+          <User className="w-16 h-16 text-agri-green" />
+        </div>
+        <h2 className="text-3xl font-bold">{user.username}</h2>
+        <Badge color="blue">{user.role}</Badge>
+      </div>
+      
+      <Card className="space-y-4">
+        <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl">
+          <span className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Trust Points</span>
+          <span className="text-agri-green font-black text-xl">{user.points}</span>
+        </div>
+        <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl">
+          <span className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Account Status</span>
+          <span className="text-blue-400 font-bold text-sm">Verified</span>
+        </div>
+      </Card>
+
+      <button onClick={onLogout} className="btn-secondary w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-500/10">
+        <LogOut className="w-5 h-5" /> Sign Out
+      </button>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+function AppContent() {
   const [user, setUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('agritrust_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (user) {
@@ -960,16 +1019,46 @@ export default function App() {
     }
   }, [user]);
 
-  if (!user) {
-    return <LoginView onLogin={setUser} />;
-  }
+  const handleLogout = () => {
+    setUser(null);
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen">
       <AnimatePresence mode="wait">
-        {user.role === 'farmer' && <FarmerDashboard user={user} onBack={() => setUser(null)} />}
-        {user.role === 'manufacturer' && <ManufacturerDashboard user={user} onBack={() => setUser(null)} />}
-        {user.role === 'admin' && <AdminDashboard user={user} onBack={() => setUser(null)} />}
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={
+            user ? <Navigate to="/dashboard" /> : <LoginView onLogin={setUser} />
+          } />
+          
+          <Route path="/dashboard" element={
+            !user ? <Navigate to="/" /> : (
+              user.role === 'farmer' ? <FarmerDashboard user={user} onBack={handleLogout} /> :
+              user.role === 'manufacturer' ? <ManufacturerDashboard user={user} onBack={handleLogout} /> :
+              <AdminDashboard user={user} onBack={handleLogout} />
+            )
+          } />
+
+          <Route path="/farmer" element={
+            !user || user.role !== 'farmer' ? <Navigate to="/" /> : <FarmerDashboard user={user} onBack={handleLogout} />
+          } />
+
+          <Route path="/manufacturer" element={
+            !user || user.role !== 'manufacturer' ? <Navigate to="/" /> : <ManufacturerDashboard user={user} onBack={handleLogout} />
+          } />
+
+          <Route path="/admin" element={
+            !user || user.role !== 'admin' ? <Navigate to="/" /> : <AdminDashboard user={user} onBack={handleLogout} />
+          } />
+
+          <Route path="/profile" element={
+            !user ? <Navigate to="/" /> : <ProfileView user={user} onLogout={handleLogout} />
+          } />
+
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </AnimatePresence>
     </div>
   );
