@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/add-seed', (req, res) => {
   const { seed_name, manufacturer, batch_number, production_date } = req.body;
+  console.log(`Add seed request received: ${seed_name} by ${manufacturer}`);
   
   try {
     // Get previous hash
@@ -41,6 +42,7 @@ router.post('/add-seed', (req, res) => {
 router.get('/verify-seed/:id', (req, res) => {
   const { id } = req.params;
   const { location } = req.query;
+  console.log(`Verify seed request received for ID: ${id} at location: ${location}`);
   
   try {
     const seed: any = db.prepare('SELECT * FROM seeds WHERE id = ?').get(id);

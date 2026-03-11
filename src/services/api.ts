@@ -1,7 +1,4 @@
-// Platform requires port 3000 for external access.
-// Using relative path '/api' is the most robust way to connect to the backend in this environment.
-// For external deployments (Vercel/Render), we use VITE_API_URL.
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = '/api';
 
 export const api = {
   async post(endpoint: string, data: any) {

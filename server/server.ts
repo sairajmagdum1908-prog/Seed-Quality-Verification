@@ -25,7 +25,8 @@ async function startServer() {
   const apiRouter = express.Router();
   
   apiRouter.use((req, res, next) => {
-    console.log(`API Request: ${req.method} ${req.url}`);
+    console.log("API request:", req.method, req.url);
+    if (req.method === 'POST') console.log('Payload:', JSON.stringify(req.body, null, 2));
     next();
   });
 
@@ -101,9 +102,11 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(process.cwd(), 'dist')));
+    const distPath = path.join(__dirname, '../dist');
+    console.log('Serving static files from:', distPath);
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.resolve(process.cwd(), 'dist/index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 

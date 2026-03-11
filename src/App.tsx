@@ -699,7 +699,7 @@ const ReportFakeView = ({ seedId, userId, onBack }: { seedId: string, userId: nu
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/reports/report-fake', { seed_id: seedId, farmer_id: userId, report_reason: reason });
+      await api.post('/reports/report-fake', { seed_id: seedId, farmer_id: userId, issue: reason });
       alert("Report submitted successfully! You earned 50 points.");
       onBack();
     } catch (err: any) {
