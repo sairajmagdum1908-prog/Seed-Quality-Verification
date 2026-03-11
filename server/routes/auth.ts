@@ -1,10 +1,9 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
 import db from '../database/db';
 
 const router = express.Router();
 
-router.post('/signup', async (req, res) => {
+router.post('/register', (req, res) => {
   const { username, password, role } = req.body;
   console.log(`Signup request received for user: ${username}`);
   
@@ -16,20 +15,15 @@ router.post('/signup', async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const info = db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run(username, hashedPassword, role);
-    
-    const user = { 
-      id: info.lastInsertRowid, 
-      username, 
-      role, 
-      points: 0 
-    };
+    const stmt = db.prepare(
+      "INSERT INTO users (username,password,role) VALUES (?,?,?)"
+    );
+
+    stmt.run(username, password, role);
 
     res.json({ 
-      success: true, 
-      message: 'Registration successful', 
-      user 
+      success: true,
+      message: "User registered successfully" 
     });
   } catch (error: any) {
     console.error('Signup error:', error);
@@ -40,14 +34,14 @@ router.post('/signup', async (req, res) => {
       });
     } else {
       res.status(500).json({ 
-        success: false, 
-        message: 'Internal server error during registration' 
+        success: false,
+        message: "Registration failed" 
       });
     }
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', (req, res) => {
   const { username, password } = req.body;
   console.log(`Login request received for user: ${username}`);
 
@@ -59,28 +53,28 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // Case-insensitive lookup using LOWER()
-    const user: any = db.prepare('SELECT * FROM users WHERE LOWER(username) = LOWER(?)').get(username);
-    
+    const user: any = db
+      .prepare("SELECT * FROM users WHERE username = ?")
+      .get(username);
+
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid Username or Password' 
+      return res.status(404).json({ 
+        success: false,
+        message: "Username not found" 
       });
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
+    if (user.password !== password) {
       return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid Username or Password' 
+        success: false,
+        message: "Incorrect password" 
       });
     }
 
     const { password: _, ...userWithoutPassword } = user;
     res.json({ 
       success: true, 
-      message: 'Login successful', 
+      message: "Login successful", 
       user: userWithoutPassword 
     });
   } catch (error: any) {

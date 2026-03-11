@@ -143,7 +143,7 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
       }
     }
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/signup';
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const data = await api.post(endpoint, { username, password, role });
       onLogin(data.user);
       navigate('/dashboard');
