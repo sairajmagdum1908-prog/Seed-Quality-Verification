@@ -25,6 +25,7 @@ router.post('/add-seed', (req, res) => {
     `).run(id, seed_name, manufacturer, batch_number, production_date, hash, previous_hash);
     
     res.json({ 
+      success: true,
       id, 
       seed_name, 
       manufacturer, 
@@ -66,7 +67,7 @@ router.get('/verify-seed/:id', (req, res) => {
     
     db.prepare('INSERT INTO scans (seed_id, scan_location, is_fraudulent) VALUES (?, ?, ?)').run(id, location || 'Unknown', is_fraudulent);
     
-    res.json({ seed, is_fraudulent: !!is_fraudulent });
+    res.json({ success: true, seed, is_fraudulent: !!is_fraudulent });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -76,7 +77,7 @@ router.get('/seed-history/:id', (req, res) => {
   const { id } = req.params;
   try {
     const scans = db.prepare('SELECT * FROM scans WHERE seed_id = ? ORDER BY scan_time DESC').all(id);
-    res.json({ scans });
+    res.json({ success: true, scans });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -44,7 +44,7 @@ import {
   AlertOctagon
 } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { 
   BarChart, 
   Bar, 
@@ -227,6 +227,17 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
                 required
               />
             </div>
+            {isLogin && (
+              <div className="flex justify-end px-2">
+                <button 
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-xs font-bold uppercase tracking-widest text-agri-green hover:text-white transition-colors underline underline-offset-4 decoration-agri-green/30"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
             {!isLogin && (
               <p className="text-[9px] text-gray-500 ml-4 leading-relaxed font-medium">
                 Must include: 8+ chars, Uppercase, Lowercase, Number, Special char.
@@ -293,9 +304,103 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
   );
 };
 
-const FarmerDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => void }) => {
+const ForgotPasswordView = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState<'home' | 'scan' | 'verifying' | 'verify' | 'report' | 'ai'>('home');
+  const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      // Mocking a password reset request
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setSuccess(true);
+    } catch (err: any) {
+      setError('Failed to send reset link. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-agri-green/10 rounded-full blur-[120px]" />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md glass rounded-[48px] p-8 md:p-12 space-y-8 relative z-10"
+      >
+        <div className="text-center space-y-3">
+          <div className="inline-block p-5 rounded-[32px] bg-agri-green/10 mb-2">
+            <Lock className="w-12 h-12 text-agri-green" />
+          </div>
+          <h2 className="text-3xl font-black tracking-tighter">Reset Password</h2>
+          <p className="text-gray-400 font-medium">Enter your identifier to receive a reset link</p>
+        </div>
+
+        {success ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-6"
+          >
+            <div className="p-6 rounded-3xl bg-agri-green/10 border border-agri-green/20">
+              <CheckCircle2 className="w-12 h-12 text-agri-green mx-auto mb-4" />
+              <p className="text-sm font-bold text-white">Reset link sent to your registered identifier!</p>
+              <p className="text-xs text-gray-500 mt-2">
+                <span className="text-agri-green font-bold">Note:</span> This is a simulation. In a production environment, you would receive a secure link via email or SMS.
+              </p>
+            </div>
+            <button onClick={() => navigate('/login')} className="btn-primary w-full h-14 uppercase tracking-widest font-black">
+              Back to Login
+            </button>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2.5">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-14">Identifier</label>
+              <div className="relative group">
+                <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
+                <input 
+                  type="text" 
+                  className="input-field w-full pl-16 h-14 bg-black/20 border-white/5 focus:border-agri-green/50" 
+                  placeholder="Email or Mobile"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {error && <p className="text-red-500 text-xs text-center font-bold">{error}</p>}
+
+            <button type="submit" disabled={loading} className="btn-primary w-full h-14 flex items-center justify-center gap-3">
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
+                <>
+                  <span className="font-black uppercase tracking-widest text-sm">Send Reset Link</span>
+                  <ArrowLeft className="w-5 h-5 rotate-180" />
+                </>
+              )}
+            </button>
+
+            <button type="button" onClick={() => navigate('/login')} className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 hover:text-white w-full transition-colors">
+              Cancel
+            </button>
+          </form>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
+const FarmerDashboard = ({ user, onBack, initialView = 'home' }: { user: UserProfile, onBack: () => void, initialView?: 'home' | 'scan' | 'verifying' | 'verify' | 'report' | 'ai' }) => {
+  const navigate = useNavigate();
+  const [view, setView] = useState<'home' | 'scan' | 'verifying' | 'verify' | 'report' | 'ai'>(initialView);
   const [scannedId, setScannedId] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -794,18 +899,34 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
     }
   };
 
+  const downloadQRCode = () => {
+    const canvas = document.getElementById('qr-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+      let downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `QR_${formData.batch_number || 'seed'}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
   if (qrData) {
     return (
       <div className="max-w-md mx-auto p-4 md:p-8 space-y-8 text-center">
         <div className="inline-block p-6 bg-white rounded-[40px] shadow-2xl">
-          <QRCodeSVG value={qrData} size={250} />
+          <QRCodeCanvas id="qr-canvas" value={qrData} size={250} level="H" includeMargin={true} />
         </div>
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">Batch Registered!</h2>
           <p className="text-gray-400">Download and print this QR code for your seed packets.</p>
         </div>
         <div className="flex flex-col gap-4">
-          <button onClick={() => window.print()} className="btn-primary">Print QR Code</button>
+          <button onClick={downloadQRCode} className="btn-primary flex items-center justify-center gap-2">
+            <Upload className="w-5 h-5 rotate-180" /> Download QR Code
+          </button>
+          <button onClick={() => window.print()} className="btn-secondary">Print QR Code</button>
           <button onClick={onBack} className="btn-secondary">Back to Dashboard</button>
         </div>
       </div>
@@ -1049,6 +1170,8 @@ function AppContent() {
           <Route path="/register" element={
             user ? <Navigate to="/dashboard" /> : <LoginView onLogin={setUser} initialIsLogin={false} />
           } />
+
+          <Route path="/forgot-password" element={<ForgotPasswordView />} />
           
           <Route path="/dashboard" element={
             !user ? <Navigate to="/login" /> : (
@@ -1068,6 +1191,10 @@ function AppContent() {
 
           <Route path="/admin" element={
             !user || user.role !== 'admin' ? <Navigate to="/" /> : <AdminDashboard user={user} onBack={handleLogout} />
+          } />
+
+          <Route path="/verify-seed" element={
+            !user || user.role !== 'farmer' ? <Navigate to="/login" /> : <FarmerDashboard user={user} onBack={handleLogout} initialView="scan" />
           } />
 
           <Route path="/profile" element={

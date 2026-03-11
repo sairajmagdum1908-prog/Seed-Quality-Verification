@@ -27,7 +27,7 @@ router.get('/all-reports', (req, res) => {
       JOIN seeds s ON r.seed_id = s.id
       ORDER BY r.report_date DESC
     `).all();
-    res.json({ reports });
+    res.json({ success: true, reports });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

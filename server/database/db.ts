@@ -1,8 +1,21 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const dbPath = path.resolve(process.cwd(), 'blockchain_ledger.db');
-const db = new Database(dbPath);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const dbPath = path.join(__dirname, '../../blockchain_ledger.db');
+let db: any;
+
+try {
+  db = new Database(dbPath);
+  console.log("Database connected at:", dbPath);
+} catch (error) {
+  console.error("Failed to connect to database:", error);
+  process.exit(1);
+}
 
 // Create tables
 try {
