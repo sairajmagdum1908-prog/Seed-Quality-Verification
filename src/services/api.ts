@@ -28,6 +28,19 @@ export const api = {
       throw err;
     }
   },
+  async delete(endpoint: string) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'DELETE',
+      });
+      return await this.handleResponse(res);
+    } catch (err: any) {
+      if (err.message === 'Failed to fetch') {
+        throw new Error('Server connection error. Please start the backend server.');
+      }
+      throw err;
+    }
+  },
   async handleResponse(res: Response) {
     let result;
     const contentType = res.headers.get('content-type');

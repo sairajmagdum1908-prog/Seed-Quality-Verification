@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../database/db';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
@@ -9,32 +10,35 @@ router.post('/register', (req, res) => {
   
   if (!username || !password || !role) {
     return res.status(400).json({ 
-      success: false, 
+      status: "error", 
       message: 'Username, password, and role are required' 
     });
   }
 
   try {
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const stmt = db.prepare(
       "INSERT INTO users (username,password,role) VALUES (?,?,?)"
     );
 
-    stmt.run(username, password, role);
+    const result = stmt.run(username, hashedPassword, role);
+    const newUser = { id: result.lastInsertRowid, username, role, points: 0 };
 
     res.json({ 
-      success: true,
-      message: "User registered successfully" 
+      status: "success",
+      message: "User registered successfully",
+      user: newUser
     });
   } catch (error: any) {
     console.error('Signup error:', error);
     if (error.message.includes('UNIQUE constraint failed')) {
       res.status(400).json({ 
-        success: false, 
+        status: "error", 
         message: 'Username already exists' 
       });
     } else {
       res.status(500).json({ 
-        success: false,
+        status: "error",
         message: "Registration failed" 
       });
     }
@@ -47,7 +51,7 @@ router.post('/login', (req, res) => {
 
   if (!username || !password) {
     return res.status(400).json({ 
-      success: false, 
+      status: "error", 
       message: 'Username and password are required' 
     });
   }
@@ -58,29 +62,34 @@ router.post('/login', (req, res) => {
       .get(username);
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Username not found" 
-      });
-    }
-
-    if (user.password !== password) {
       return res.status(401).json({ 
-        success: false,
-        message: "Incorrect password" 
+        status: "error",
+        message: "Invalid username or password" 
       });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        status: "error",
+        message: "Invalid username or password" 
+      });
+    }
+
     res.json({ 
-      success: true, 
-      message: "Login successful", 
-      user: userWithoutPassword 
+      status: "success", 
+      role: user.role,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        points: user.points
+      }
     });
   } catch (error: any) {
     console.error('Login error:', error);
     res.status(500).json({ 
-      success: false, 
+      status: "error", 
       message: 'Internal server error during login' 
     });
   }

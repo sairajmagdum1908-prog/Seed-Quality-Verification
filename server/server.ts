@@ -6,6 +6,9 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import seedRoutes from './routes/seeds';
 import reportRoutes from './routes/reports';
+import userRoutes from './routes/users';
+import aiRoutes from './routes/ai';
+import transactionRoutes from './routes/transactions';
 import { GoogleGenAI } from "@google/genai";
 import db from './database/db';
 
@@ -34,11 +37,14 @@ async function startServer() {
   apiRouter.use('/auth', authRoutes);
   apiRouter.use('/seeds', seedRoutes);
   apiRouter.use('/reports', reportRoutes);
+  apiRouter.use('/users', userRoutes);
+  apiRouter.use('/ai', aiRoutes);
+  apiRouter.use('/transactions', transactionRoutes);
 
   // Gemini AI Analysis
   apiRouter.post('/analyze-seed', async (req, res) => {
     const { image } = req.body;
-    if (!image) return res.status(400).json({ success: false, message: 'Image is required' });
+    if (!image) return res.status(400).json({ status: "error", message: 'Image is required' });
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -53,10 +59,10 @@ async function startServer() {
           }
         ]
       });
-      res.json({ analysis: response.text });
+      res.json({ status: "success", analysis: response.text });
     } catch (error: any) {
       console.error('AI Analysis Error:', error);
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ status: "error", message: error.message });
     }
   });
 
@@ -74,11 +80,17 @@ async function startServer() {
         GROUP BY scan_location 
         ORDER BY count DESC
       `).all();
+
+      const roleDistribution = db.prepare(`
+        SELECT role, COUNT(*) as count 
+        FROM users 
+        GROUP BY role
+      `).all();
       
-      res.json({ totalSeeds, totalScans, fraudulentScans, totalReports, scanHeatmap });
+      res.json({ status: "success", totalSeeds, totalScans, fraudulentScans, totalReports, scanHeatmap, roleDistribution });
     } catch (error: any) {
       console.error('Stats Error:', error);
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ status: "error", message: error.message });
     }
   });
 
@@ -89,7 +101,7 @@ async function startServer() {
   app.all('/api/*', (req, res) => {
     console.warn(`API 404: ${req.method} ${req.url}`);
     res.status(404).json({
-      success: false,
+      status: "error",
       message: `API Route ${req.method} ${req.url} not found`
     });
   });
@@ -118,7 +130,7 @@ async function startServer() {
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error('Unhandled Error:', err);
     res.status(err.status || 500).json({
-      success: false,
+      status: "error",
       message: err.message || 'Internal Server Error'
     });
   });
