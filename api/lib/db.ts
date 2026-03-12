@@ -32,13 +32,11 @@ export const query = async (text: string, params?: any[]) => {
   throw new Error('Query failed after retries');
 };
 
-34 }
-35 let dbInitialized = false;
-36 let dbInitializationPromise: Promise<void> | null = null;
-
-37 export const initDb = async () => {
-38   if (dbInitialized) return;
-39   if (dbInitializationPromise) return dbInitializationPromise;
+ let dbInitialized = false;
+ let dbInitializationPromise: Promise<void> | null = null;
+ export const initDb = async () => {
+     if (dbInitialized) return;
+   if (dbInitializationPromise) return dbInitializationPromise;
 
   dbInitializationPromise = (async () => {
     console.log('Initializing database...');
