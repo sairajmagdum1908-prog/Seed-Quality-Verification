@@ -34,12 +34,12 @@ router.get('/', async (req, res) => {
     
     res.json({ 
       success: true, 
-      totalSeeds: totalSeeds.rows[0], 
-      totalScans: totalScans.rows[0], 
-      fraudulentScans: fraudulentScans.rows[0], 
-      totalReports: totalReports.rows[0], 
+      totalSeeds: parseInt(totalSeeds.rows[0].count), 
+      totalScans: parseInt(totalScans.rows[0].count), 
+      fraudulentScans: parseInt(fraudulentScans.rows[0].count), 
+      totalReports: parseInt(totalReports.rows[0].count), 
       scanHeatmap: scanHeatmap.rows, 
-      roleDistribution: roleDistribution.rows 
+      roleDistribution: roleDistribution.rows.map((r: any) => ({ ...r, count: parseInt(r.count) }))
     });
   } catch (error: any) {
     console.error('Stats Error:', error);
