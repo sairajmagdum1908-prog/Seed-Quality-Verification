@@ -123,30 +123,6 @@ interface Report {
 
 // --- Components ---
 
-const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <motion.div 
-      initial={{ y: 50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 50, opacity: 0 }}
-      className={`fixed bottom-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border ${
-        type === 'success' ? 'bg-agri-green/10 border-agri-green/20 text-agri-green' : 'bg-red-500/10 border-red-500/20 text-red-500'
-      }`}
-    >
-      {type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-      <p className="text-sm font-bold">{message}</p>
-      <button onClick={onClose} className="ml-4 hover:opacity-70">
-        <X className="w-4 h-4" />
-      </button>
-    </motion.div>
-  );
-};
-
 const ConfirmationModal = ({ 
   isOpen, 
   title, 
@@ -196,6 +172,23 @@ const ConfirmationModal = ({
     </div>
   );
 };
+
+const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.9 }}
+    className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border ${
+      type === 'success' ? 'bg-agri-green/20 border-agri-green/30 text-white' : 'bg-red-500/20 border-red-500/30 text-white'
+    }`}
+  >
+    {type === 'success' ? <CheckCircle2 className="w-5 h-5 text-agri-green" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
+    <span className="text-sm font-bold tracking-wide">{message}</span>
+    <button onClick={onClose} className="ml-4 p-1 hover:bg-white/10 rounded-full transition-colors">
+      <X className="w-4 h-4 opacity-50" />
+    </button>
+  </motion.div>
+);
 
 const LoadingOverlay = ({ message }: { message?: string }) => (
   <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center space-y-4">
@@ -260,6 +253,9 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const data = await api.post(endpoint, { username, password, role });
+      if (data.token) {
+        localStorage.setItem('agritrust_token', data.token);
+      }
       onLogin(data.user);
       navigate('/dashboard');
     } catch (err: any) {
@@ -1487,7 +1483,7 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
     setLoading(true);
     try {
       const [statsData, reportsData, usersData, seedsData, transactionsData] = await Promise.all([
-        api.get('/admin/stats'),
+        api.get('/stats'),
         api.get('/reports/all-reports'),
         api.get('/users/all-users'),
         api.get('/seeds'),
@@ -2369,8 +2365,14 @@ function AppContent() {
     const saved = localStorage.getItem('agritrust_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     if (user) {
@@ -2434,6 +2436,16 @@ function AppContent() {
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <Toast 
+            message={toast.message} 
+            type={toast.type} 
+            onClose={() => setToast(null)} 
+          />
+        )}
       </AnimatePresence>
     </div>
   );

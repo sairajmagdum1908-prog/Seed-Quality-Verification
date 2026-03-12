@@ -1,10 +1,36 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
+  "version": 2,
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/api/auth(.*)",
+      "destination": "/api/auth.ts"
+    },
+    {
+      "source": "/api/users(.*)",
+      "destination": "/api/users.ts"
+    },
+    {
+      "source": "/api/seeds(.*)",
+      "destination": "/api/seeds.ts"
+    },
+    {
+      "source": "/api/transactions(.*)",
+      "destination": "/api/transactions.ts"
+    },
+    {
+      "source": "/api/reports(.*)",
+      "destination": "/api/reports.ts"
+    },
+    {
+      "source": "/api/ai(.*)",
+      "destination": "/api/ai.ts"
+    },
+    {
+      "source": "/api/stats(.*)",
+      "destination": "/api/stats.ts"
     },
     {
       "source": "/(.*)",

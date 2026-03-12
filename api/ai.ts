@@ -1,13 +1,16 @@
 import express from 'express';
 import { GoogleGenAI } from "@google/genai";
 
+const app = express();
+app.use(express.json({ limit: '50mb' }));
+
 const router = express.Router();
 
 router.post('/chat', async (req, res) => {
   const { message } = req.body;
   
   if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ status: "error", message: 'Gemini API key not configured' });
+    return res.status(500).json({ success: false, message: 'Gemini API key not configured' });
   }
 
   try {
@@ -20,19 +23,19 @@ router.post('/chat', async (req, res) => {
       },
     });
 
-    res.json({ status: "success", response: response.text });
+    res.json({ success: true, response: response.text });
   } catch (error: any) {
     console.error('AI Error:', error);
-    res.status(500).json({ status: "error", message: 'Failed to get AI response' });
+    res.status(500).json({ success: false, message: 'Failed to get AI response' });
   }
 });
 
 router.post('/analyze-seed', async (req, res) => {
   const { image } = req.body;
-  if (!image) return res.status(400).json({ status: "error", message: 'Image is required' });
+  if (!image) return res.status(400).json({ success: false, message: 'Image is required' });
 
   if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ status: "error", message: 'Gemini API key not configured' });
+    return res.status(500).json({ success: false, message: 'Gemini API key not configured' });
   }
 
   try {
@@ -48,11 +51,13 @@ router.post('/analyze-seed', async (req, res) => {
         }
       ]
     });
-    res.json({ status: "success", analysis: response.text });
+    res.json({ success: true, analysis: response.text });
   } catch (error: any) {
     console.error('AI Analysis Error:', error);
-    res.status(500).json({ status: "error", message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-export default router;
+app.use('/api/ai', router);
+
+export default app;
