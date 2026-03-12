@@ -1,13 +1,18 @@
 import express from 'express';
-import { query } from './lib/db';
+import { query, initDb } from './lib/db';
 import bcrypt from 'bcryptjs';
 
 const app = express();
 app.use(express.json());
 
+const ensureDb = async () => {
+  await initDb();
+};
+
 const router = express.Router();
 
 router.get('/all-users', async (req, res) => {
+  await ensureDb();
   try {
     const result = await query('SELECT id, username, role, points, name, phone, location, status FROM users ORDER BY id DESC');
     res.json({ success: true, users: result.rows });
@@ -17,6 +22,7 @@ router.get('/all-users', async (req, res) => {
 });
 
 router.post('/update-status/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   const { status } = req.body;
   try {
@@ -28,6 +34,7 @@ router.post('/update-status/:id', async (req, res) => {
 });
 
 router.post('/update-role/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   const { role } = req.body;
   try {
@@ -39,6 +46,7 @@ router.post('/update-role/:id', async (req, res) => {
 });
 
 router.post('/reset-password/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   const { newPassword } = req.body;
   try {
@@ -51,6 +59,7 @@ router.post('/reset-password/:id', async (req, res) => {
 });
 
 router.delete('/delete-user/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   try {
     await query('DELETE FROM users WHERE id = $1', [id]);
@@ -61,6 +70,7 @@ router.delete('/delete-user/:id', async (req, res) => {
 });
 
 router.post('/update-profile/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   const { name, phone, location, language } = req.body;
   try {

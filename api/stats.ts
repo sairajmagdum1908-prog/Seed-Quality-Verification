@@ -1,12 +1,17 @@
 import express from 'express';
-import { query } from './lib/db';
+import { query, initDb } from './lib/db';
 
 const app = express();
 app.use(express.json());
 
+const ensureDb = async () => {
+  await initDb();
+};
+
 const router = express.Router();
 
 router.get('/', async (req, res) => {
+  await ensureDb();
   try {
     const totalSeeds = await query('SELECT COUNT(*) as count FROM seeds');
     const totalScans = await query('SELECT COUNT(*) as count FROM scans');

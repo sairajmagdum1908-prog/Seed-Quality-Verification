@@ -1,14 +1,19 @@
 import express from 'express';
-import { query } from './lib/db';
+import { query, initDb } from './lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
 const app = express();
 app.use(express.json());
 
+const ensureDb = async () => {
+  await initDb();
+};
+
 const router = express.Router();
 
 router.get('/', async (req, res) => {
+  await ensureDb();
   try {
     const result = await query('SELECT * FROM seeds ORDER BY production_date DESC');
     res.json({ success: true, seeds: result.rows });
@@ -18,6 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  await ensureDb();
   const { seed_name, manufacturer, batch_number, production_date, expiry_date } = req.body;
   
   try {
@@ -53,6 +59,7 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/verify-seed/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   const { location, user_id } = req.query;
   
@@ -96,6 +103,7 @@ router.get('/verify-seed/:id', async (req, res) => {
 });
 
 router.get('/manufacturer-seeds/:manufacturer', async (req, res) => {
+  await ensureDb();
   const { manufacturer } = req.params;
   try {
     const result = await query('SELECT * FROM seeds WHERE manufacturer = $1 ORDER BY production_date DESC', [manufacturer]);
@@ -106,6 +114,7 @@ router.get('/manufacturer-seeds/:manufacturer', async (req, res) => {
 });
 
 router.post('/recall-seed/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   try {
     await query('UPDATE seeds SET is_recalled = 1 WHERE seed_id = $1', [id]);

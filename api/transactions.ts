@@ -1,12 +1,17 @@
 import express from 'express';
-import { query } from './lib/db';
+import { query, initDb } from './lib/db';
 
 const app = express();
 app.use(express.json());
 
+const ensureDb = async () => {
+  await initDb();
+};
+
 const router = express.Router();
 
 router.get('/', async (req, res) => {
+  await ensureDb();
   try {
     const result = await query(`
       SELECT t.*, s.seed_name, u.username as farmer_name 

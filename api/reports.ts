@@ -1,12 +1,17 @@
 import express from 'express';
-import { query } from './lib/db';
+import { query, initDb } from './lib/db';
 
 const app = express();
 app.use(express.json());
 
+const ensureDb = async () => {
+  await initDb();
+};
+
 const router = express.Router();
 
 router.get('/all-reports', async (req, res) => {
+  await ensureDb();
   try {
     const result = await query(`
       SELECT r.*, s.seed_name, u.username 
@@ -22,6 +27,7 @@ router.get('/all-reports', async (req, res) => {
 });
 
 router.post('/report-fake', async (req, res) => {
+  await ensureDb();
   const { seed_id, farmer_id, issue, location } = req.body;
   try {
     await query(`
@@ -35,6 +41,7 @@ router.post('/report-fake', async (req, res) => {
 });
 
 router.post('/resolve-report/:id', async (req, res) => {
+  await ensureDb();
   const { id } = req.params;
   try {
     await query('UPDATE reports SET status = $1 WHERE id = $2', ['resolved', id]);

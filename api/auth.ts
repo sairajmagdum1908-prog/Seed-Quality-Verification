@@ -6,13 +6,8 @@ import { generateToken } from './lib/auth';
 const app = express();
 app.use(express.json());
 
-// Initialize DB on first request (or we could do it differently, but this is easy for serverless)
-let dbInitialized = false;
 const ensureDb = async () => {
-  if (!dbInitialized) {
-    await initDb();
-    dbInitialized = true;
-  }
+  await initDb();
 };
 
 const router = express.Router();

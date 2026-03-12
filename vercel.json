@@ -1,35 +1,35 @@
 {
   "version": 2,
-  "buildCommand": "vite build",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/auth(.*)",
+      "source": "/api/auth/(.*)",
       "destination": "/api/auth.ts"
     },
     {
-      "source": "/api/users(.*)",
+      "source": "/api/users/(.*)",
       "destination": "/api/users.ts"
     },
     {
-      "source": "/api/seeds(.*)",
+      "source": "/api/seeds/(.*)",
       "destination": "/api/seeds.ts"
     },
     {
-      "source": "/api/transactions(.*)",
+      "source": "/api/transactions/(.*)",
       "destination": "/api/transactions.ts"
     },
     {
-      "source": "/api/reports(.*)",
+      "source": "/api/reports/(.*)",
       "destination": "/api/reports.ts"
     },
     {
-      "source": "/api/ai(.*)",
+      "source": "/api/ai/(.*)",
       "destination": "/api/ai.ts"
     },
     {
-      "source": "/api/stats(.*)",
+      "source": "/api/stats",
       "destination": "/api/stats.ts"
     },
     {

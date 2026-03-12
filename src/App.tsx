@@ -516,6 +516,7 @@ const FarmerDashboard = ({ user, onBack, initialView = 'home' }: { user: UserPro
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [recentScans, setRecentScans] = useState<Scan[]>([]);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     if (view === 'home') {
@@ -547,7 +548,7 @@ const FarmerDashboard = ({ user, onBack, initialView = 'home' }: { user: UserPro
       setScannedId(id);
       setView('verify');
     } catch (err: any) {
-      alert(err.message);
+      setToast({ message: err.message, type: 'error' });
       setView('home');
     } finally {
       setLoading(false);
@@ -695,6 +696,9 @@ const FarmerDashboard = ({ user, onBack, initialView = 'home' }: { user: UserPro
           )}
         </div>
       </Card>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1052,16 +1056,17 @@ const VerificationResult = ({ result, user, onBack, onReport }: { result: any, u
 const ReportFakeView = ({ seedId, userId, onBack }: { seedId: string, userId: number, onBack: () => void }) => {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await api.post('/reports/report-fake', { seed_id: seedId, farmer_id: userId, issue: reason });
-      alert("Report submitted successfully! You earned 50 points.");
-      onBack();
+      setToast({ message: "Report submitted successfully! You earned 50 points.", type: 'success' });
+      setTimeout(onBack, 2000);
     } catch (err: any) {
-      alert(err.message);
+      setToast({ message: err.message, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -1093,6 +1098,9 @@ const ReportFakeView = ({ seedId, userId, onBack }: { seedId: string, userId: nu
         </button>
         <button type="button" onClick={onBack} className="btn-secondary w-full">Cancel</button>
       </form>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1176,6 +1184,8 @@ const ManufacturerDashboard = ({ user, onBack }: { user: UserProfile, onBack: ()
   const [view, setView] = useState<'home' | 'add'>('home');
   const [seeds, setSeeds] = useState<Seed[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean, title: string, message: string, onConfirm: () => void }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
   useEffect(() => {
     if (view === 'home') {
@@ -1195,13 +1205,21 @@ const ManufacturerDashboard = ({ user, onBack }: { user: UserProfile, onBack: ()
   };
 
   const handleRecall = async (id: string) => {
-    if (!confirm('Are you sure you want to recall this batch? This will mark all seeds in this batch as suspicious.')) return;
-    try {
-      await api.post(`/seeds/recall-seed/${id}`, {});
-      fetchSeeds();
-    } catch (err: any) {
-      alert(err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Recall Batch',
+      message: 'Are you sure you want to recall this batch? This will mark all seeds in this batch as suspicious.',
+      onConfirm: async () => {
+        try {
+          await api.post(`/seeds/recall-seed/${id}`, {});
+          setToast({ message: 'Batch recalled successfully', type: 'success' });
+          fetchSeeds();
+        } catch (err: any) {
+          setToast({ message: err.message, type: 'error' });
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   if (view === 'add') {
@@ -1324,6 +1342,16 @@ const ManufacturerDashboard = ({ user, onBack }: { user: UserProfile, onBack: ()
           </table>
         </div>
       </Card>
+      <ConfirmationModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1337,15 +1365,17 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = await api.post('/seeds/add', { ...formData, manufacturer });
+      const data = await api.post('/seeds', { ...formData, manufacturer });
       setResult(data);
+      setToast({ message: 'Batch registered successfully', type: 'success' });
     } catch (err: any) {
-      alert(err.message);
+      setToast({ message: err.message, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -1448,6 +1478,9 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
           </button>
         </form>
       </Card>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
     </div>
   );
 };const AdminDashboard = ({ user, onBack }: { user: UserProfile, onBack: () => void }) => {
