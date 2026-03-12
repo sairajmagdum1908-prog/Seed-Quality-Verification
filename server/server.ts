@@ -41,31 +41,6 @@ async function startServer() {
   apiRouter.use('/ai', aiRoutes);
   apiRouter.use('/transactions', transactionRoutes);
 
-  // Gemini AI Analysis
-  apiRouter.post('/analyze-seed', async (req, res) => {
-    const { image } = req.body;
-    if (!image) return res.status(400).json({ status: "error", message: 'Image is required' });
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          {
-            parts: [
-              { text: "Analyze this seed image. Predict seed quality, possible defects, and authenticity hints. Provide a structured response." },
-              { inlineData: { mimeType: "image/jpeg", data: image.split(',')[1] } }
-            ]
-          }
-        ]
-      });
-      res.json({ status: "success", analysis: response.text });
-    } catch (error: any) {
-      console.error('AI Analysis Error:', error);
-      res.status(500).json({ status: "error", message: error.message });
-    }
-  });
-
   // Dashboard Stats
   apiRouter.get('/admin/stats', (req, res) => {
     try {

@@ -316,7 +316,7 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-6">Identifier</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-16">Identifier</label>
             <div className="relative group">
               <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
               <input 
@@ -330,7 +330,7 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
             </div>
           </div>
           <div className="space-y-2.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-6">Credentials</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-16">Credentials</label>
             <div className="relative group">
               <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
               <input 
@@ -354,14 +354,14 @@ const LoginView = ({ onLogin, initialIsLogin = true }: { onLogin: (u: UserProfil
               </div>
             )}
             {!isLogin && (
-              <p className="text-[9px] text-gray-500 ml-6 leading-relaxed font-medium">
+              <p className="text-[9px] text-gray-500 ml-16 leading-relaxed font-medium">
                 Must include: 8+ chars, Uppercase, Lowercase, Number, Special char.
               </p>
             )}
           </div>
           {!isLogin && (
             <div className="space-y-2.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-6">Your Role</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-16">Your Role</label>
               <div className="relative group">
                 <Briefcase className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
                 <select 
@@ -478,7 +478,7 @@ const ForgotPasswordView = () => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-6">Identifier</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-agri-green/80 ml-16">Identifier</label>
               <div className="relative group">
                 <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-agri-green transition-colors" />
                 <input 

@@ -33,7 +33,7 @@
 }
 
 .input-field {
-  @apply bg-white/5 border border-white/10 rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-agri-green/50 transition-all;
+  @apply bg-white/5 border border-white/10 rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-agri-green/50;
 }
 
 @keyframes scan {
