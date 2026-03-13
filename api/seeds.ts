@@ -3,9 +3,6 @@ import { query, initDb } from './lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
-const app = express();
-app.use(express.json());
-
 const ensureDb = async () => {
   await initDb();
 };
@@ -124,6 +121,4 @@ router.post('/recall-seed/:id', async (req, res) => {
   }
 });
 
-app.use('/api/seeds', router);
-
-export default app;
+export default router;

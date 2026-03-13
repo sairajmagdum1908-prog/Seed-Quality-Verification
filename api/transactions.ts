@@ -1,9 +1,6 @@
 import express from 'express';
 import { query, initDb } from './lib/db';
 
-const app = express();
-app.use(express.json());
-
 const ensureDb = async () => {
   await initDb();
 };
@@ -26,6 +23,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-app.use('/api/transactions', router);
-
-export default app;
+export default router;

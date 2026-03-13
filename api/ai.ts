@@ -1,9 +1,6 @@
 import express from 'express';
 import { GoogleGenAI } from "@google/genai";
 
-const app = express();
-app.use(express.json({ limit: '50mb' }));
-
 const router = express.Router();
 
 router.post('/chat', async (req, res) => {
@@ -58,6 +55,4 @@ router.post('/analyze-seed', async (req, res) => {
   }
 });
 
-app.use('/api/ai', router);
-
-export default app;
+export default router;

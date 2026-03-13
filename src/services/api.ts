@@ -57,6 +57,47 @@ export const api = {
       throw err;
     }
   },
+  async login(username: string, password: string) {
+    return this.post('/auth/login', { username, password });
+  },
+  async register(data: any) {
+    return this.post('/auth/register', data);
+  },
+  async getStats() {
+    const res = await this.get('/stats');
+    return res;
+  },
+  async getUsers() {
+    const res = await this.get('/users/all-users');
+    return res.users;
+  },
+  async getReports() {
+    const res = await this.get('/reports/all-reports');
+    return res.reports;
+  },
+  async deleteUser(id: string) {
+    return this.delete(`/users/delete-user/${id}`);
+  },
+  async resolveReport(id: string) {
+    return this.post(`/reports/resolve-report/${id}`, {});
+  },
+  async getTransactions() {
+    const res = await this.get('/transactions');
+    return res.transactions;
+  },
+  async verifySeed(id: string) {
+    return this.get(`/seeds/verify-seed/${id}`);
+  },
+  async getSeeds() {
+    const res = await this.get('/seeds');
+    return res.seeds;
+  },
+  async createSeed(data: any) {
+    return this.post('/seeds', data);
+  },
+  async recallSeed(id: string) {
+    return this.post(`/seeds/recall-seed/${id}`, {});
+  },
   async handleResponse(res: Response) {
     let result;
     const contentType = res.headers.get('content-type');

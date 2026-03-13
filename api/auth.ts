@@ -3,9 +3,6 @@ import bcrypt from 'bcryptjs';
 import { query, initDb } from './lib/db';
 import { generateToken } from './lib/auth';
 
-const app = express();
-app.use(express.json());
-
 const ensureDb = async () => {
   await initDb();
 };
@@ -82,6 +79,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-app.use('/api/auth', router);
-
-export default app;
+export default router;

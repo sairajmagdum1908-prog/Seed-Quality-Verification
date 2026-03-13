@@ -2,9 +2,6 @@ import express from 'express';
 import { query, initDb } from './lib/db';
 import bcrypt from 'bcryptjs';
 
-const app = express();
-app.use(express.json());
-
 const ensureDb = async () => {
   await initDb();
 };
@@ -85,6 +82,4 @@ router.post('/update-profile/:id', async (req, res) => {
   }
 });
 
-app.use('/api/users', router);
-
-export default app;
+export default router;

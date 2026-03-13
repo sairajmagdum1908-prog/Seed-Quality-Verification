@@ -1,9 +1,6 @@
 import express from 'express';
 import { query, initDb } from './lib/db';
 
-const app = express();
-app.use(express.json());
-
 const ensureDb = async () => {
   await initDb();
 };
@@ -51,6 +48,4 @@ router.post('/resolve-report/:id', async (req, res) => {
   }
 });
 
-app.use('/api/reports', router);
-
-export default app;
+export default router;
