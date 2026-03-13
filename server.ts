@@ -8,12 +8,16 @@ import transactionsRouter from "./api/transactions";
 import reportsRouter from "./api/reports";
 import statsRouter from "./api/stats";
 import aiRouter from "./api/ai";
+import { initDb } from "./api/lib/db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 10000;
+
+// Initialize database
+initDb().catch(err => console.error('Failed to initialize database on startup:', err));
 
 app.use(express.json({ limit: '50mb' }));
 

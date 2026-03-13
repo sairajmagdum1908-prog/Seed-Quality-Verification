@@ -42,6 +42,10 @@ export const initDb = async () => {
   dbInitializationPromise = (async () => {
     console.log('Initializing database...');
     try {
+      // Test connection
+      await pool.query('SELECT 1');
+      console.log('Database connection verified');
+
       await query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
@@ -100,15 +104,39 @@ export const initDb = async () => {
       `);
       
       // Check if admin exists, if not create one
-      const adminCheck = await query('SELECT * FROM users WHERE role = $1', ['admin']);
+      const adminCheck = await query('SELECT * FROM users WHERE username = $1', ['admin']);
+      const bcryptModule = await import('bcryptjs');
+      const bcrypt = bcryptModule.default || bcryptModule;
+      
       if (adminCheck.rowCount === 0) {
-        const bcrypt = await import('bcryptjs');
-        const hashedPassword = bcrypt.default.hashSync('admin123', 10);
+        const hashedPassword = bcrypt.hashSync('admin123', 10);
         await query(
           'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
           ['admin', hashedPassword, 'admin', 'System Administrator']
         );
         console.log('Default admin created: admin / admin123');
+      }
+
+      // Check if farmer exists, if not create one
+      const farmerCheck = await query('SELECT * FROM users WHERE username = $1', ['farmer']);
+      if (farmerCheck.rowCount === 0) {
+        const hashedPassword = bcrypt.hashSync('farmer123', 10);
+        await query(
+          'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
+          ['farmer', hashedPassword, 'farmer', 'Default Farmer']
+        );
+        console.log('Default farmer created: farmer / farmer123');
+      }
+
+      // Check if manufacturer exists, if not create one
+      const manufacturerCheck = await query('SELECT * FROM users WHERE username = $1', ['manufacturer']);
+      if (manufacturerCheck.rowCount === 0) {
+        const hashedPassword = bcrypt.hashSync('manufacturer123', 10);
+        await query(
+          'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
+          ['manufacturer', hashedPassword, 'manufacturer', 'Default Manufacturer']
+        );
+        console.log('Default manufacturer created: manufacturer / manufacturer123');
       }
 
       dbInitialized = true;
