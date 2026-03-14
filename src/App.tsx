@@ -751,7 +751,13 @@ const AgriBotView = ({ onBack }: { onBack: () => void }) => {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] p-4 rounded-3xl ${msg.role === 'user' ? 'bg-agri-green text-white rounded-tr-none' : 'bg-white/5 border border-white/5 rounded-tl-none'}`}>
-                <p className="text-sm leading-relaxed">{msg.text}</p>
+                {msg.role === 'bot' ? (
+                  <div className="text-sm leading-relaxed">
+                    <Markdown>{msg.text}</Markdown>
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                )}
               </div>
             </div>
           ))}
@@ -890,36 +896,138 @@ const ScanHistoryView = ({ userId, onBack }: { userId: number, onBack: () => voi
 };
 
 const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: () => void }) => {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [isScanning, setIsScanning] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    scannerRef.current = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
-    scannerRef.current.render((decodedText) => {
+    const startScanner = async () => {
       try {
-        const data = JSON.parse(decodedText);
-        if (data.id) {
-          scannerRef.current?.clear();
-          onScan(data.id);
-        }
-      } catch (e) {
-        alert("Invalid QR Code Format");
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const html5QrCode = new Html5Qrcode("reader");
+        scannerRef.current = html5QrCode;
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        // Use back camera by default
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => {
+            try {
+              const data = JSON.parse(decodedText);
+              if (data.id) {
+                html5QrCode.stop().then(() => {
+                  onScan(data.id);
+                });
+              }
+            } catch (e) {
+              // If not JSON, try using the text directly if it looks like a UUID
+              if (decodedText.length > 20) {
+                html5QrCode.stop().then(() => {
+                  onScan(decodedText);
+                });
+              }
+            }
+          },
+          (errorMessage) => {
+            // ignore errors
+          }
+        );
+      } catch (err: any) {
+        console.error("Scanner error:", err);
+        setError("Could not start camera. Please ensure permissions are granted.");
+        setIsScanning(false);
       }
-    }, (error) => {});
+    };
+
+    startScanner();
 
     return () => {
-      scannerRef.current?.clear();
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch((err: any) => console.error(err));
+      }
     };
   }, []);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const html5QrCode = new Html5Qrcode("reader-file");
+      const decodedText = await html5QrCode.scanFile(file, true);
+      
+      try {
+        const data = JSON.parse(decodedText);
+        if (data.id) {
+          onScan(data.id);
+        }
+      } catch (e) {
+        if (decodedText.length > 20) {
+          onScan(decodedText);
+        } else {
+          alert("Invalid QR Code Format in image");
+        }
+      }
+    } catch (err) {
+      alert("Could not find a valid QR code in this image.");
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-6">
-      <div className="w-full max-w-md glass rounded-[40px] overflow-hidden relative">
-        <div id="reader" className="w-full"></div>
-        <div className="scan-line"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-6 bg-[#0a0f0a]">
+      <div className="text-center space-y-2 mb-4">
+        <h2 className="text-2xl font-black uppercase tracking-tighter">Secure Scanner</h2>
+        <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Point at Agritrust QR Code</p>
       </div>
-      <button onClick={onBack} className="btn-secondary flex items-center gap-2">
-        <ArrowLeft className="w-5 h-5" /> Go Back
-      </button>
+
+      <div className="w-full max-w-md glass rounded-[40px] overflow-hidden relative border border-white/10 shadow-2xl">
+        <div id="reader" className="w-full aspect-square"></div>
+        <div id="reader-file" className="hidden"></div>
+        {isScanning && <div className="scan-line"></div>}
+        
+        {error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/80 backdrop-blur-md">
+            <ShieldAlert className="w-12 h-12 text-red-500 mb-4" />
+            <p className="text-sm font-bold text-white mb-6">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-6 py-3 bg-agri-green rounded-2xl font-bold text-xs uppercase tracking-widest"
+            >
+              Retry Permission
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col w-full max-w-md gap-4">
+        <button 
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 hover:bg-white/10 transition-all group"
+        >
+          <Upload className="w-5 h-5 text-agri-green group-hover:scale-110 transition-transform" />
+          <span className="font-black uppercase tracking-widest text-xs">Scan From Image File</span>
+        </button>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileUpload} 
+          accept="image/*" 
+          className="hidden" 
+        />
+
+        <button onClick={onBack} className="w-full h-16 rounded-3xl bg-white/5 flex items-center justify-center gap-3 hover:bg-red-500/10 hover:text-red-500 transition-all">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-black uppercase tracking-widest text-xs">Cancel Scanning</span>
+        </button>
+      </div>
+
+      <div className="pt-8 opacity-20">
+        <ShieldCheck className="w-12 h-12 text-agri-green" />
+      </div>
     </div>
   );
 };
@@ -1372,7 +1480,7 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
     setLoading(true);
     try {
       const data = await api.post('/seeds', { ...formData, manufacturer });
-      setResult(data);
+      setResult(data.seed);
       setToast({ message: 'Batch registered successfully', type: 'success' });
     } catch (err: any) {
       setToast({ message: err.message, type: 'error' });
@@ -1399,11 +1507,11 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
           <div className="w-full space-y-3 text-left">
             <div className="flex justify-between text-xs">
               <span className="text-gray-400 font-bold uppercase">Seed ID</span>
-              <span className="text-black font-mono font-bold">{result.id}</span>
+              <span className="text-black font-mono font-bold">{result.seed_id}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-gray-400 font-bold uppercase">Hash</span>
-              <span className="text-black font-mono font-bold truncate ml-4">{result.hash.substring(0, 16)}...</span>
+              <span className="text-black font-mono font-bold truncate ml-4">{result.verification_hash.substring(0, 16)}...</span>
             </div>
           </div>
         </Card>

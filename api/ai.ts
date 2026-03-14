@@ -14,7 +14,7 @@ router.post('/chat', async (req, res) => {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: message,
+      contents: [{ role: 'user', parts: [{ text: message }] }],
       config: {
         systemInstruction: "You are an AI Agri-Bot, an expert agricultural assistant. Provide clear, helpful, and practical advice on planting methods, fertilizer usage, irrigation tips, and pest control. Keep responses concise and farmer-friendly.",
       },
