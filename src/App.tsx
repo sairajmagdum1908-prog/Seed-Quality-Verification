@@ -71,7 +71,7 @@ import {
   Area
 } from 'recharts';
 import { api } from './services/api';
-import { GoogleGenAI } from "@google/genai";
+import { getAgriAdvice, analyzeSeedImage } from './services/geminiService';
 
 // --- Types ---
 interface UserProfile {
@@ -726,15 +726,8 @@ const AgriBotView = ({ onBack }: { onBack: () => void }) => {
     setLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [{ role: 'user', parts: [{ text: userMsg }] }],
-        config: {
-          systemInstruction: "You are an AI Agri-Bot, an expert agricultural assistant. Provide clear, helpful, and practical advice on planting methods, fertilizer usage, irrigation tips, and pest control. Keep responses concise and farmer-friendly.",
-        },
-      });
-      setMessages(prev => [...prev, { role: 'bot', text: response.text || 'No response from AI.' }]);
+      const responseText = await getAgriAdvice("General Farming", userMsg);
+      setMessages(prev => [...prev, { role: 'bot', text: responseText }]);
     } catch (err: any) {
       console.error('AI Error:', err);
       setMessages(prev => [...prev, { role: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
@@ -1242,19 +1235,8 @@ const AIAnalysisView = ({ onBack }: { onBack: () => void }) => {
     if (!image) return;
     setLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          {
-            parts: [
-              { text: "Analyze this seed image. Predict seed quality, possible defects, and authenticity hints. Provide a structured response." },
-              { inlineData: { mimeType: "image/jpeg", data: image.split(',')[1] } }
-            ]
-          }
-        ]
-      });
-      setAnalysis(response.text || 'No analysis generated.');
+      const responseText = await analyzeSeedImage(image.split(',')[1]);
+      setAnalysis(responseText);
     } catch (err: any) {
       console.error('AI Analysis Error:', err);
       alert(err.message);
