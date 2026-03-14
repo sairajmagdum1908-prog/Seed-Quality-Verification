@@ -60,14 +60,14 @@ router.post('/login', async (req, res) => {
       [username]
     );
 
-    if (!result.rows || result.rows.length === 0) {
+    const user = result.rows[0];
+
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Username not found'
       });
     }
-
-    const user = result.rows[0];
 
     if (!user.password) {
       return res.status(500).json({
