@@ -51,7 +51,10 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const result = await query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await query(
+      'SELECT id, username, password, role FROM users WHERE username = $1',
+      [username]
+    );
     const user = result.rows[0];
 
     if (!user) {
@@ -59,7 +62,10 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.password) {
-      return res.status(500).json({ success: false, message: 'Password field missing in database' });
+      return res.status(500).json({
+        success: false,
+        message: 'Password missing in database'
+      });
     }
 
     const isPasswordValid = bcrypt.compareSync(password, user.password);
