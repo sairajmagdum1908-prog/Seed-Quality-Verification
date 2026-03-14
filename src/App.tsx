@@ -71,6 +71,7 @@ import {
   Area
 } from 'recharts';
 import { api } from './services/api';
+import { GoogleGenAI } from "@google/genai";
 
 // --- Types ---
 interface UserProfile {
@@ -725,9 +726,17 @@ const AgriBotView = ({ onBack }: { onBack: () => void }) => {
     setLoading(true);
 
     try {
-      const data = await api.post('/ai/chat', { message: userMsg });
-      setMessages(prev => [...prev, { role: 'bot', text: data.response }]);
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+        config: {
+          systemInstruction: "You are an AI Agri-Bot, an expert agricultural assistant. Provide clear, helpful, and practical advice on planting methods, fertilizer usage, irrigation tips, and pest control. Keep responses concise and farmer-friendly.",
+        },
+      });
+      setMessages(prev => [...prev, { role: 'bot', text: response.text || 'No response from AI.' }]);
     } catch (err: any) {
+      console.error('AI Error:', err);
       setMessages(prev => [...prev, { role: 'bot', text: 'Sorry, I encountered an error. Please try again.' }]);
     } finally {
       setLoading(false);
@@ -1233,9 +1242,21 @@ const AIAnalysisView = ({ onBack }: { onBack: () => void }) => {
     if (!image) return;
     setLoading(true);
     try {
-      const data = await api.post('/ai/analyze-seed', { image });
-      setAnalysis(data.analysis);
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            parts: [
+              { text: "Analyze this seed image. Predict seed quality, possible defects, and authenticity hints. Provide a structured response." },
+              { inlineData: { mimeType: "image/jpeg", data: image.split(',')[1] } }
+            ]
+          }
+        ]
+      });
+      setAnalysis(response.text || 'No analysis generated.');
     } catch (err: any) {
+      console.error('AI Analysis Error:', err);
       alert(err.message);
     } finally {
       setLoading(false);
@@ -1489,6 +1510,19 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
     }
   };
 
+  const downloadQR = () => {
+    const canvas = document.getElementById('qr-code-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `QR_${result.batch_number || 'seed'}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
   if (result) {
     return (
       <div className="max-w-md mx-auto p-8 space-y-8 text-center">
@@ -1502,7 +1536,7 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
         
         <Card className="p-8 bg-white flex flex-col items-center space-y-6">
           <div className="p-4 bg-white rounded-2xl shadow-2xl">
-            <QRCodeSVG value={result.qr_data} size={200} />
+            <QRCodeCanvas id="qr-code-canvas" value={result.qr_data} size={200} level="H" includeMargin={true} />
           </div>
           <div className="w-full space-y-3 text-left">
             <div className="flex justify-between text-xs">
@@ -1517,7 +1551,10 @@ const AddSeedView = ({ manufacturer, onBack }: { manufacturer: string, onBack: (
         </Card>
 
         <div className="flex flex-col gap-3">
-          <button onClick={() => window.print()} className="btn-primary w-full flex items-center justify-center gap-2">
+          <button onClick={downloadQR} className="btn-primary w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700">
+            <Download className="w-5 h-5" /> Download QR Image
+          </button>
+          <button onClick={() => window.print()} className="btn-secondary w-full flex items-center justify-center gap-2">
             <Printer className="w-5 h-5" /> Print QR Codes
           </button>
           <button onClick={onBack} className="text-xs font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Back to Dashboard</button>

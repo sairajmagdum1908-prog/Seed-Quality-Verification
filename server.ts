@@ -7,7 +7,6 @@ import seedsRouter from "./api/seeds";
 import transactionsRouter from "./api/transactions";
 import reportsRouter from "./api/reports";
 import statsRouter from "./api/stats";
-import aiRouter from "./api/ai";
 import { initDb } from "./api/lib/db";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +27,6 @@ app.use("/api/seeds", seedsRouter);
 app.use("/api/transactions", transactionsRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/stats", statsRouter);
-app.use("/api/ai", aiRouter);
 
 // Serve static files from the Vite build
 const distPath = path.join(__dirname, "dist");
