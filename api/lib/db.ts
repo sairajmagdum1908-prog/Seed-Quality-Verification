@@ -1,10 +1,5 @@
-import pg from 'pg';
-
-const { Pool } = pg;
-
-if (!process.env.DATABASE_URL) {
-  console.warn('DATABASE_URL is not defined. Database connection will fail.');
-}
+import pkg from "pg";
+const { Pool } = pkg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -13,142 +8,94 @@ const pool = new Pool({
   }
 });
 
-export const query = async (text: string, params?: any[]) => {
-  const start = Date.now();
-  let retries = 3;
-  while (retries > 0) {
-    try {
-      const res = await pool.query(text, params);
-      const duration = Date.now() - start;
-      console.log('executed query', { text, duration, rows: res.rowCount });
-      return res;
-    } catch (error: any) {
-      retries--;
-      console.error(`Query error (retries left: ${retries})`, { text, error: error.message });
-      if (retries === 0) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
-    }
-  }
-  throw new Error('Query failed after retries');
+export const query = (text: string, params?: any[]) => {
+  return pool.query(text, params);
 };
 
 let dbInitialized = false;
-let dbInitializationPromise: Promise<void> | null = null;
 
 export const initDb = async () => {
   if (dbInitialized) return;
-  if (dbInitializationPromise) return dbInitializationPromise;
+  try {
+    await pool.query("SELECT 1");
+    console.log("Database connected successfully");
 
-  dbInitializationPromise = (async () => {
-    console.log('Initializing database...');
-    try {
-      // Test connection
-      await pool.query('SELECT 1');
-      console.log('Database connection verified');
+    // Ensure tables exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE,
+        password TEXT,
+        role TEXT,
+        points INTEGER DEFAULT 0,
+        name TEXT,
+        phone TEXT,
+        location TEXT,
+        language TEXT DEFAULT 'English',
+        status TEXT DEFAULT 'active'
+      );
 
-      await query(`
-        CREATE TABLE IF NOT EXISTS users (
-          id SERIAL PRIMARY KEY,
-          username TEXT UNIQUE,
-          password TEXT,
-          role TEXT,
-          points INTEGER DEFAULT 0,
-          name TEXT,
-          phone TEXT,
-          location TEXT,
-          language TEXT DEFAULT 'English',
-          status TEXT DEFAULT 'active'
-        );
+      CREATE TABLE IF NOT EXISTS seeds (
+        seed_id TEXT PRIMARY KEY,
+        seed_name TEXT,
+        manufacturer TEXT,
+        batch_number TEXT,
+        production_date TEXT,
+        expiry_date TEXT,
+        verification_hash TEXT,
+        previous_hash TEXT,
+        is_recalled INTEGER DEFAULT 0,
+        id TEXT,
+        hash TEXT
+      );
 
-        CREATE TABLE IF NOT EXISTS seeds (
-          seed_id TEXT PRIMARY KEY,
-          seed_name TEXT,
-          manufacturer TEXT,
-          batch_number TEXT,
-          production_date TEXT,
-          expiry_date TEXT,
-          verification_hash TEXT,
-          previous_hash TEXT,
-          is_recalled INTEGER DEFAULT 0,
-          id TEXT,
-          hash TEXT
-        );
+      CREATE TABLE IF NOT EXISTS transactions (
+        transaction_id SERIAL PRIMARY KEY,
+        seed_id TEXT,
+        farmer_id INTEGER,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
 
-        CREATE TABLE IF NOT EXISTS transactions (
-          transaction_id SERIAL PRIMARY KEY,
-          seed_id TEXT,
-          farmer_id INTEGER,
-          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+      CREATE TABLE IF NOT EXISTS scans (
+        scan_id SERIAL PRIMARY KEY,
+        seed_id TEXT,
+        scanned_by INTEGER,
+        scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        result TEXT,
+        user_id INTEGER,
+        scan_location TEXT,
+        is_fraudulent INTEGER DEFAULT 0
+      );
 
-        CREATE TABLE IF NOT EXISTS scans (
-          scan_id SERIAL PRIMARY KEY,
-          seed_id TEXT,
-          scanned_by INTEGER,
-          scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          result TEXT,
-          user_id INTEGER,
-          scan_location TEXT,
-          is_fraudulent INTEGER DEFAULT 0
-        );
-
-        CREATE TABLE IF NOT EXISTS reports (
-          id SERIAL PRIMARY KEY,
-          seed_id TEXT,
-          user_id INTEGER,
-          issue TEXT,
-          location TEXT,
-          status TEXT DEFAULT 'pending',
-          reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
-      
-      // Check if admin exists, if not create one
-      const adminCheck = await query('SELECT * FROM users WHERE username = $1', ['admin']);
-      const bcryptModule = await import('bcryptjs');
-      const bcrypt = bcryptModule.default || bcryptModule;
-      
-      if (adminCheck.rowCount === 0) {
-        const hashedPassword = bcrypt.hashSync('admin123', 10);
-        await query(
-          'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
-          ['admin', hashedPassword, 'admin', 'System Administrator']
-        );
-        console.log('Default admin created: admin / admin123');
-      }
-
-      // Check if farmer exists, if not create one
-      const farmerCheck = await query('SELECT * FROM users WHERE username = $1', ['farmer']);
-      if (farmerCheck.rowCount === 0) {
-        const hashedPassword = bcrypt.hashSync('farmer123', 10);
-        await query(
-          'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
-          ['farmer', hashedPassword, 'farmer', 'Default Farmer']
-        );
-        console.log('Default farmer created: farmer / farmer123');
-      }
-
-      // Check if manufacturer exists, if not create one
-      const manufacturerCheck = await query('SELECT * FROM users WHERE username = $1', ['manufacturer']);
-      if (manufacturerCheck.rowCount === 0) {
-        const hashedPassword = bcrypt.hashSync('manufacturer123', 10);
-        await query(
-          'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
-          ['manufacturer', hashedPassword, 'manufacturer', 'Default Manufacturer']
-        );
-        console.log('Default manufacturer created: manufacturer / manufacturer123');
-      }
-
-      dbInitialized = true;
-      console.log('Database initialized successfully');
-    } catch (error) {
-      console.error('Database initialization failed', error);
-      dbInitializationPromise = null; // Allow retry on next call
-      throw error;
+      CREATE TABLE IF NOT EXISTS reports (
+        id SERIAL PRIMARY KEY,
+        seed_id TEXT,
+        user_id INTEGER,
+        issue TEXT,
+        location TEXT,
+        status TEXT DEFAULT 'pending',
+        reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Create default users if they don't exist
+    const adminCheck = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);
+    if (adminCheck.rowCount === 0) {
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = bcrypt.default.hashSync('admin123', 10);
+      await pool.query(
+        'INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)',
+        ['admin', hashedPassword, 'admin', 'System Administrator']
+      );
+      console.log('Default admin created');
     }
-  })();
 
-  return dbInitializationPromise;
+    dbInitialized = true;
+    console.log("Database initialized successfully");
+  } catch (err) {
+    console.error("Database connection/initialization failed:", err);
+    throw err;
+  }
 };
 
 export default pool;
