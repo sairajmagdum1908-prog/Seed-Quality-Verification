@@ -42,39 +42,59 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post('/login', async (req, res) => {
+  await ensureDb();
+
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing credentials"
+    });
+  }
+
   try {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: "Missing credentials" });
-    }
-
     const result = await query(
       "SELECT id, username, password, role FROM users WHERE username = $1",
       [username]
     );
 
-    if (!result.rows.length) {
-      return res.status(401).json({ success: false, message: "Username not found" });
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Username not found"
+      });
     }
 
     const user = result.rows[0];
 
-    const valid = bcrypt.compareSync(password, user.password);
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
 
-    if (!valid) {
-      return res.status(401).json({ success: false, message: "Invalid password" });
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid password"
+      });
     }
 
     const token = generateToken(user);
+
     const { password: _, ...safeUser } = user;
 
-    return res.json({ success: true, token, user: safeUser });
+    return res.json({
+      success: true,
+      token,
+      user: safeUser
+    });
 
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
   }
 });
 
