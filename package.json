@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "tsx server.ts",
+    "postinstall": "npm install --include=optional",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
