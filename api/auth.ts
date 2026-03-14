@@ -44,10 +44,14 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   await ensureDb();
+
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Missing credentials' });
+    return res.status(400).json({
+      success: false,
+      message: 'Missing credentials'
+    });
   }
 
   try {
@@ -55,14 +59,15 @@ router.post('/login', async (req, res) => {
       'SELECT id, username, password, role FROM users WHERE username = $1',
       [username]
     );
-    const user = result.rows[0];
 
-    if (!user) {
+    if (!result.rows || result.rows.length === 0) {
       return res.status(401).json({
         success: false,
         message: 'Username not found'
       });
     }
+
+    const user = result.rows[0];
 
     if (!user.password) {
       return res.status(500).json({
@@ -74,22 +79,29 @@ router.post('/login', async (req, res) => {
     const isPasswordValid = bcrypt.compareSync(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: 'Invalid password' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid password'
+      });
     }
 
     const token = generateToken(user);
-    
-    // Don't send password back
+
     const { password: _, ...userWithoutPassword } = user;
 
-    res.json({
+    return res.json({
       success: true,
       token,
       user: userWithoutPassword
     });
+
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
   }
 });
 
