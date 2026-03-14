@@ -58,7 +58,12 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Username not found' });
     }
 
+    if (!user.password) {
+      return res.status(500).json({ success: false, message: 'Password field missing in database' });
+    }
+
     const isPasswordValid = bcrypt.compareSync(password, user.password);
+
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
