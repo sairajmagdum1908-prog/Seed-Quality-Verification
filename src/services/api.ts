@@ -1,4 +1,4 @@
-const API_BASE = 'https://seed-quality-verification-1.onrender.com/api';
+const API_BASE = "https://seed-quality-verification-1.onrender.com/api";
 
 export const api = {
   getToken() {

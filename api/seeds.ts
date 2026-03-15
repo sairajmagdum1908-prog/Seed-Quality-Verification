@@ -99,6 +99,38 @@ router.get('/verify-seed/:id', async (req, res) => {
   }
 });
 
+router.get('/user-scans/:user_id', async (req, res) => {
+  await ensureDb();
+  const { user_id } = req.params;
+  try {
+    const result = await query(`
+      SELECT s.scan_id as id, s.*, sd.seed_name, sd.manufacturer 
+      FROM scans s
+      JOIN seeds sd ON s.seed_id = sd.seed_id
+      WHERE s.user_id = $1
+      ORDER BY s.scan_time DESC
+    `, [user_id]);
+    res.json({ success: true, scans: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/seed-history/:seed_id', async (req, res) => {
+  await ensureDb();
+  const { seed_id } = req.params;
+  try {
+    const result = await query(`
+      SELECT * FROM scans 
+      WHERE seed_id = $1 
+      ORDER BY scan_time DESC
+    `, [seed_id]);
+    res.json({ success: true, scans: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 router.get('/manufacturer-seeds/:manufacturer', async (req, res) => {
   await ensureDb();
   const { manufacturer } = req.params;
