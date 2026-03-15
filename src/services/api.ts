@@ -57,11 +57,8 @@ export const api = {
       throw err;
     }
   },
-  async login(username: string, password: string) {
-    return this.post('/auth/login', {
-      identifier: username,
-      password: password
-    });
+  async login(email: string, password: string) {
+    return this.post('/auth/login', { email, password });
   },
   async register(data: any) {
     return this.post('/auth/register', data);

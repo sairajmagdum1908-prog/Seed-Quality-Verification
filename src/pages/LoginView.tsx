@@ -4,7 +4,7 @@ import { Shield, ArrowRight, Loader2, User, Lock, Sprout } from 'lucide-react';
 import { api } from '../services/api';
 
 export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: (user: any) => void }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,7 +14,7 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: (user: any) => v
     setIsLoading(true);
     setError('');
     try {
-      const response = await api.login(username, password);
+      const response = await api.login(email, password);
       onLoginSuccess(response.user);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
@@ -46,15 +46,15 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: (user: any) => v
         <div className="glass rounded-[40px] p-10 space-y-8 border border-white/5">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">Username</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">Email</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-agri-green/50 transition-all text-white"
-                  placeholder="Enter username"
+                  placeholder="Enter email"
                   required
                 />
               </div>
