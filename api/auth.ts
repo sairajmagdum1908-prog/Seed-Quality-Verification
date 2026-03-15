@@ -45,10 +45,10 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   await ensureDb();
 
-  const { identifier, password } = req.body;
-  const username = identifier;
+  const { identifier, email, username, password } = req.body;
+  const loginId = identifier || email || username;
 
-  if (!identifier || !password) {
+  if (!loginId || !password) {
     return res.status(400).json({
       success: false,
       message: "Missing credentials"
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
   try {
     const result = await query(
       "SELECT id, username, password, role FROM users WHERE username = $1",
-      [username]
+      [loginId]
     );
 
     if (!result.rows || result.rows.length === 0) {
