@@ -46,15 +46,15 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: (user: any) => v
         <div className="glass rounded-[40px] p-10 space-y-8 border border-white/5">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">Email</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">Identifier</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-agri-green/50 transition-all text-white"
-                  placeholder="Enter email"
+                  placeholder="Enter your identifier (email)"
                   required
                 />
               </div>

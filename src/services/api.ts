@@ -58,7 +58,10 @@ export const api = {
     }
   },
   async login(email: string, password: string) {
-    return this.post('/auth/login', { email, password });
+    return this.post('/auth/login', {
+      email: email,
+      password: password
+    });
   },
   async register(data: any) {
     return this.post('/auth/register', data);
