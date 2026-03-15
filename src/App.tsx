@@ -900,8 +900,10 @@ const ScanHistoryView = ({ userId, onBack }: { userId: number, onBack: () => voi
 const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: () => void }) => {
   const [isScanning, setIsScanning] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNoQrMessage, setShowNoQrMessage] = useState(false);
   const scannerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const noQrTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     const startScanner = async () => {
@@ -910,36 +912,59 @@ const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: (
         const html5QrCode = new Html5Qrcode("reader");
         scannerRef.current = html5QrCode;
 
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        // Improved configuration for better detection
+        const config = { 
+          fps: 20, // Increased FPS for faster detection
+          qrbox: { width: 280, height: 280 },
+          aspectRatio: 1.0,
+          // Request higher resolution for better clarity
+          videoConstraints: {
+            facingMode: "environment",
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+            focusMode: "continuous"
+          }
+        };
         
-        // Use back camera by default
+        // Start a timer to show "No QR detected" message if nothing found in 7 seconds
+        noQrTimeoutRef.current = setTimeout(() => {
+          setShowNoQrMessage(true);
+        }, 7000);
+
         await html5QrCode.start(
           { facingMode: "environment" },
           config,
           (decodedText) => {
+            // Clear timeout on success
+            if (noQrTimeoutRef.current) clearTimeout(noQrTimeoutRef.current);
+            setShowNoQrMessage(false);
+
             try {
               const data = JSON.parse(decodedText);
               if (data.id) {
                 html5QrCode.stop().then(() => {
                   onScan(data.id);
-                });
-              }
-            } catch (e) {
-              // If not JSON, try using the text directly if it looks like a UUID
-              if (decodedText.length > 20) {
+                }).catch(() => onScan(data.id));
+              } else {
+                // Fallback if JSON but no ID
                 html5QrCode.stop().then(() => {
                   onScan(decodedText);
-                });
+                }).catch(() => onScan(decodedText));
               }
+            } catch (e) {
+              // If not JSON, use the text directly
+              html5QrCode.stop().then(() => {
+                onScan(decodedText);
+              }).catch(() => onScan(decodedText));
             }
           },
           (errorMessage) => {
-            // ignore errors
+            // ignore frame-by-frame errors
           }
         );
       } catch (err: any) {
         console.error("Scanner error:", err);
-        setError("Could not start camera. Please ensure permissions are granted.");
+        setError("Could not start camera. Please ensure permissions are granted and you are using HTTPS.");
         setIsScanning(false);
       }
     };
@@ -947,8 +972,9 @@ const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: (
     startScanner();
 
     return () => {
+      if (noQrTimeoutRef.current) clearTimeout(noQrTimeoutRef.current);
       if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch((err: any) => console.error(err));
+        scannerRef.current.stop().catch((err: any) => console.error("Stop error:", err));
       }
     };
   }, []);
@@ -964,40 +990,77 @@ const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: (
       
       try {
         const data = JSON.parse(decodedText);
-        if (data.id) {
-          onScan(data.id);
-        }
+        onScan(data.id || decodedText);
       } catch (e) {
-        if (decodedText.length > 20) {
-          onScan(decodedText);
-        } else {
-          alert("Invalid QR Code Format in image");
-        }
+        onScan(decodedText);
       }
     } catch (err) {
-      alert("Could not find a valid QR code in this image.");
+      alert("Could not find a valid QR code in this image. Please try a clearer photo.");
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-6 bg-[#0a0f0a]">
-      <div className="text-center space-y-2 mb-4">
-        <h2 className="text-2xl font-black uppercase tracking-tighter">Secure Scanner</h2>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-6 bg-[#0a0f0a] relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-agri-green/5 rounded-full blur-[120px]" />
+      
+      <div className="text-center space-y-2 mb-4 relative z-10">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="inline-block p-3 rounded-2xl bg-agri-green/10 mb-2"
+        >
+          <Camera className="w-8 h-8 text-agri-green" />
+        </motion.div>
+        <h2 className="text-3xl font-black uppercase tracking-tighter">Seed Scanner</h2>
         <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Point at Agritrust QR Code</p>
       </div>
 
-      <div className="w-full max-w-md glass rounded-[40px] overflow-hidden relative border border-white/10 shadow-2xl">
-        <div id="reader" className="w-full aspect-square"></div>
+      <div className="w-full max-w-md glass rounded-[40px] overflow-hidden relative border border-white/10 shadow-2xl z-10">
+        <div id="reader" className="w-full aspect-square bg-black"></div>
         <div id="reader-file" className="hidden"></div>
-        {isScanning && <div className="scan-line"></div>}
+        
+        {/* Scanning Overlay */}
+        {isScanning && !error && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 border-[40px] border-black/40"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] border-2 border-agri-green/50 rounded-3xl">
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-agri-green rounded-tl-lg"></div>
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-agri-green rounded-tr-lg"></div>
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-agri-green rounded-bl-lg"></div>
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-agri-green rounded-br-lg"></div>
+              <motion.div 
+                animate={{ top: ['10%', '90%', '10%'] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="absolute left-4 right-4 h-0.5 bg-agri-green shadow-[0_0_15px_rgba(16,185,129,0.8)] z-20"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* No QR Detected Message */}
+        <AnimatePresence>
+          {showNoQrMessage && !error && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[80%] p-4 bg-black/80 backdrop-blur-md rounded-2xl border border-white/10 text-center z-30"
+            >
+              <p className="text-xs font-bold text-white leading-relaxed">
+                No QR detected. Please point the camera directly at the seed package QR code.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/80 backdrop-blur-md">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/90 backdrop-blur-md z-40">
             <ShieldAlert className="w-12 h-12 text-red-500 mb-4" />
-            <p className="text-sm font-bold text-white mb-6">{error}</p>
+            <p className="text-sm font-bold text-white mb-6 leading-relaxed">{error}</p>
             <button 
               onClick={() => window.location.reload()} 
-              className="px-6 py-3 bg-agri-green rounded-2xl font-bold text-xs uppercase tracking-widest"
+              className="px-8 py-4 bg-agri-green rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-agri-green/20"
             >
               Retry Permission
             </button>
@@ -1005,13 +1068,13 @@ const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: (
         )}
       </div>
 
-      <div className="flex flex-col w-full max-w-md gap-4">
+      <div className="flex flex-col w-full max-w-md gap-4 relative z-10">
         <button 
           onClick={() => fileInputRef.current?.click()}
           className="w-full h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 hover:bg-white/10 transition-all group"
         >
           <Upload className="w-5 h-5 text-agri-green group-hover:scale-110 transition-transform" />
-          <span className="font-black uppercase tracking-widest text-xs">Scan From Image File</span>
+          <span className="font-black uppercase tracking-widest text-xs">Scan From Gallery</span>
         </button>
         <input 
           type="file" 
@@ -1021,7 +1084,7 @@ const QRScanner = ({ onScan, onBack }: { onScan: (id: string) => void, onBack: (
           className="hidden" 
         />
 
-        <button onClick={onBack} className="w-full h-16 rounded-3xl bg-white/5 flex items-center justify-center gap-3 hover:bg-red-500/10 hover:text-red-500 transition-all">
+        <button onClick={onBack} className="w-full h-16 rounded-3xl bg-white/5 flex items-center justify-center gap-3 hover:bg-red-500/10 hover:text-red-500 transition-all border border-transparent hover:border-red-500/20">
           <ArrowLeft className="w-5 h-5" />
           <span className="font-black uppercase tracking-widest text-xs">Cancel Scanning</span>
         </button>
